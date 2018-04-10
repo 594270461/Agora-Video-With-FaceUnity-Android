@@ -1,6 +1,5 @@
 package com.faceunity.fulivedemo;
 
-import android.graphics.Matrix;
 import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
 import android.opengl.EGL14;
@@ -41,15 +40,11 @@ import io.agora.AGEventHandler;
 import io.agora.ConstantsBeauty;
 import io.agora.rtc.Constants;
 import io.agora.rtc.RtcEngine;
-import io.agora.rtc.gl.RendererCommon;
-import io.agora.rtc.gl.TextureBufferImpl;
-import io.agora.rtc.gl.VideoFrame;
 import io.agora.rtc.mediaio.IVideoFrameConsumer;
 import io.agora.rtc.mediaio.IVideoSink;
 import io.agora.rtc.mediaio.IVideoSource;
 import io.agora.rtc.mediaio.MediaIO;
 import io.agora.rtc.mediaio.SurfaceTextureHelper;
-import io.agora.rtc.utils.YuvUtils;
 import io.agora.rtc.video.VideoCanvas;
 
 import static com.faceunity.fulivedemo.encoder.TextureMovieEncoder.IN_RECORDING;
@@ -69,6 +64,8 @@ public abstract class FUExampleActivity extends FUBaseUIActivity
 
 
     protected abstract int draw(byte[] cameraNV21Byte, byte[] fuImgNV21Bytes, int cameraTextureId, int cameraWidth, int cameraHeight, int frameId, int[] ints, int currentCameraType);
+
+    protected abstract byte[] getFuImgNV21Bytes();
 
     public final static String TAG = FUExampleActivity.class.getSimpleName();
 
@@ -151,6 +148,8 @@ public abstract class FUExampleActivity extends FUBaseUIActivity
         openCamera(mCurrentCameraType, mCameraWidth, mCameraHeight);
 
         mGLSurfaceView.onResume();
+
+        setConfig();
     }
 
     @Override
@@ -183,28 +182,7 @@ public abstract class FUExampleActivity extends FUBaseUIActivity
         FPSUtil.reset();
     }
 
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        Log.e(TAG, "onDestroy");
-        mEffectFileName = EffectAndFilterSelectAdapter.EFFECT_ITEM_FILE_NAME[1];
-
-        mCreateItemThread.quitSafely();
-        mCreateItemThread = null;
-        mCreateItemHandler = null;
-    }
-
-    private IVideoFrameConsumer mIVideoFrameConsumer;
-    private boolean mVideoFrameConsumerReady;
-
-    @Override
-    protected void initUIandEvent() {
-        event().addEventHandler(this);
-
-        String roomName = getIntent().getStringExtra(ConstantsBeauty.ACTION_KEY_ROOM_NAME);
-
-        worker().configEngine(Constants.CLIENT_ROLE_BROADCASTER
-                , ConstantsBeauty.VIDEO_PROFILES[ConstantsBeauty.DEFAULT_PROFILE_IDX]);
+    private void setConfig() {
 
         IVideoSource source = new IVideoSource() {
 
@@ -232,7 +210,9 @@ public abstract class FUExampleActivity extends FUBaseUIActivity
 
             @Override
             public int getBufferType() {
-                return MediaIO.PixelFormat.TEXTURE_2D.intValue();
+                // 这里在针对不同的PixelFormat时要选用对应的BufferType
+                // return MediaIO.BufferType.TEXTURE.intValue();
+                return MediaIO.BufferType.BYTE_ARRAY.intValue();
             }
         };
         worker().setVideoSource(source);
@@ -288,6 +268,30 @@ public abstract class FUExampleActivity extends FUBaseUIActivity
 
             }
         });
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        Log.e(TAG, "onDestroy");
+        mEffectFileName = EffectAndFilterSelectAdapter.EFFECT_ITEM_FILE_NAME[1];
+
+        mCreateItemThread.quitSafely();
+        mCreateItemThread = null;
+        mCreateItemHandler = null;
+    }
+
+    private IVideoFrameConsumer mIVideoFrameConsumer;
+    private boolean mVideoFrameConsumerReady;
+
+    @Override
+    protected void initUIandEvent() {
+        event().addEventHandler(this);
+
+        String roomName = getIntent().getStringExtra(ConstantsBeauty.ACTION_KEY_ROOM_NAME);
+
+        worker().configEngine(Constants.CLIENT_ROLE_BROADCASTER
+                , ConstantsBeauty.VIDEO_PROFILES[ConstantsBeauty.DEFAULT_PROFILE_IDX]);
 
         worker().joinChannel(roomName, config().mUid);
     }
@@ -599,8 +603,15 @@ public abstract class FUExampleActivity extends FUBaseUIActivity
                     0.0f, 0.0f, 0.0f, 1.0f
             };
 
-            if (mVideoFrameConsumerReady){
+            if (mVideoFrameConsumerReady) {
+                // 输入相机采集的OES格式的Texture
+                // mIVideoFrameConsumer.consumeTextureFrame(mCameraTextureId, MediaIO.PixelFormat.TEXTURE_OES.intValue(), mCameraWidth, mCameraHeight, 270, System.currentTimeMillis(), transformMatrix);
+                // 输入经过美颜处理的2D格式的Texture
                 mIVideoFrameConsumer.consumeTextureFrame(fuTex, MediaIO.PixelFormat.TEXTURE_2D.intValue(), mCameraWidth, mCameraHeight, 270, System.currentTimeMillis(), transformMatrix);
+                // 输入PixelType为ByteArray类型的数据(经过美颜处理的)
+                // mIVideoFrameConsumer.consumeByteArrayFrame(getFuImgNV21Bytes(), MediaIO.PixelFormat.NV21.intValue(), mCameraWidth, mCameraHeight, 90, System.currentTimeMillis());
+                // 输入PixelType为ByteArray类型的数据(摄像头直接采集未经过美颜处理的)
+                // mIVideoFrameConsumer.consumeByteArrayFrame(mCameraNV21Byte, MediaIO.PixelFormat.NV21.intValue(), mCameraWidth, mCameraHeight, 90, System.currentTimeMillis());
             }
         }
 
@@ -657,14 +668,13 @@ public abstract class FUExampleActivity extends FUBaseUIActivity
                     expressionData,
                     rotationData,
                     rotationModeData,
-                        /*flags*/0,
+                    /*flags*/0,
                     mCameraWidth,
                     mCameraHeight,
                     mFrameId++,
                     new int[]{mEffectItem},
                     isTracking);
         }
-
 
 
         public void switchCameraSurfaceTexture() {

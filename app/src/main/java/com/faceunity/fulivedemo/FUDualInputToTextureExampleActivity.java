@@ -15,11 +15,13 @@ import com.faceunity.wrapper.faceunity;
 @SuppressWarnings("deprecation")
 public class FUDualInputToTextureExampleActivity extends FUExampleActivity {
 
+    private byte[] mFuImgNV21Bytes;
+
     @Override
     protected int draw(byte[] cameraNV21Byte, byte[] fuImgNV21Bytes, int cameraTextureId, int cameraWidth, int cameraHeight, int frameId, int[] arrayItems, int currentCameraType) {
         boolean isOESTexture = true; //Tip: camera texture类型是默认的是OES的，和texture 2D不同
         int flags = isOESTexture ? faceunity.FU_ADM_FLAG_EXTERNAL_OES_TEXTURE : 0;
-        boolean isNeedReadBack = false; //是否需要写回，如果是，则入参的byte[]会被修改为带有fu特效的；支持写回自定义大小的内存数组中，即readback custom img
+        boolean isNeedReadBack = true; //是否需要写回，如果是，则入参的byte[]会被修改为带有fu特效的；支持写回自定义大小的内存数组中，即readback custom img
         flags = isNeedReadBack ? flags | faceunity.FU_ADM_FLAG_ENABLE_READBACK : flags;
         if (isNeedReadBack) {
             if (fuImgNV21Bytes == null) {
@@ -31,10 +33,17 @@ public class FUDualInputToTextureExampleActivity extends FUExampleActivity {
         }
         flags |= currentCameraType == Camera.CameraInfo.CAMERA_FACING_FRONT ? 0 : faceunity.FU_ADM_FLAG_FLIP_X;
 
+        mFuImgNV21Bytes = fuImgNV21Bytes;
+
             /*
              * 这里拿到fu处理过后的texture，可以对这个texture做后续操作，如硬编、预览。
              */
         return faceunity.fuDualInputToTexture(fuImgNV21Bytes, cameraTextureId, flags,
                 cameraWidth, cameraHeight, frameId, arrayItems);
+    }
+
+    @Override
+    protected byte[] getFuImgNV21Bytes() {
+        return mFuImgNV21Bytes;
     }
 }

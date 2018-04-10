@@ -54,9 +54,9 @@ public class MainActivity extends ListActivity {
             {"fuDualInputToTexture",
                     "示例：双输入，输入摄像头nv21格式内容和surface texture，输出添加美颜和道具后的texture",
                     "FUDualInputToTextureExampleActivity"},
-            /*{"fuRenderToNV21Image",
+            {"fuRenderToNV21Image",
                     "示例：单输入，输入摄像头nv21格式内容，输出添加美颜和道具后的nv21 bytes和texture",
-                    "FURenderToNV21ImageExampleActivity"},*/
+                    "FURenderToNV21ImageExampleActivity"},
     };
 
     @Override
