@@ -210,9 +210,9 @@ public abstract class FUExampleActivity extends FUBaseUIActivity
 
             @Override
             public int getBufferType() {
-                // 这里在针对不同的PixelFormat时要选用对应的BufferType
-                // return MediaIO.BufferType.TEXTURE.intValue();
-                return MediaIO.BufferType.BYTE_ARRAY.intValue();
+                // 这里在针对不同的PixelFormat时要选用对应的BufferType, Texture格式返回3，其他返回1
+                return 3;
+                // return 1;
             }
         };
         worker().setVideoSource(source);
