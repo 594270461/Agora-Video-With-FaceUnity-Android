@@ -185,7 +185,3 @@ fabric.properties
 
 # .so Files #
 app/src/main/jniLibs/*/*.so
-
-# ignore files
-!app/src/main/jniLibs/*/libnama.so
-!app/libs/nama.jar
