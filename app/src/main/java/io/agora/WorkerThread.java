@@ -174,7 +174,8 @@ public class WorkerThread extends Thread {
 
         mRtcEngine.setClientRole(cRole);
 
-        mRtcEngine.setParameters("{\"che.video.enable_external_texture_input\": true}");
+        // AGORA SDK 在通信模式下不支持Texture输入，请在不使用Texture输入的时候注释掉这一句
+        // mRtcEngine.setParameters("{\"che.video.enable_external_texture_input\": true}");
 
         Log.d(TAG, "configEngine " + cRole + " " + mEngineConfig.mVideoProfile);
     }
@@ -230,7 +231,9 @@ public class WorkerThread extends Thread {
                 throw new RuntimeException("NEED TO check rtc sdk init fatal error\n" + Log.getStackTraceString(e));
             }
             mRtcEngine.setParameters("{\"rtc.log_filter\": 65535}");
+            // 在这里设置通信和直播模式
             mRtcEngine.setChannelProfile(Constants.CHANNEL_PROFILE_LIVE_BROADCASTING);
+            // mRtcEngine.setChannelProfile(Constants.CHANNEL_PROFILE_COMMUNICATION);
             mRtcEngine.enableVideo();
             mRtcEngine.setLogFile(Environment.getExternalStorageDirectory()
                     + File.separator + mContext.getPackageName() + "/log/agora-rtc.log");
